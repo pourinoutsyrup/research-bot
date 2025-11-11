@@ -1,0 +1,58 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+dist/
+*.egg-info/
+
+# Secrets & API Keys
+.env
+*.key
+*_secrets.py
+config/secrets.json
+api_keys.txt
+
+# Data & Databases
+*.csv
+*.db
+*.sqlite
+*.sqlite3
+data/
+datasets/
+*.parquet
+*.pkl
+*.pickle
+
+# Logs
+*.log
+logs/
+output/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Model artifacts
+models/
+checkpoints/
+*.h5
+*.pth
+*.ckpt

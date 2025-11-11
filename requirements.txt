@@ -1,0 +1,16 @@
+requests==2.31.0
+beautifulsoup4==4.12.2
+selenium==4.15.0
+arxiv==2.1.0
+PyPDF2==3.0.1
+pandas==2.1.0
+sqlalchemy==2.0.23
+ccxt==4.1.77
+python-dotenv==1.0.0
+
+discord.py
+python-dotenv
+schedule
+
+aiohttp>=3.8.0
+arxiv>=2.1.0
