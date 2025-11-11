@@ -280,59 +280,83 @@ CATEGORIES: {categories}
             "messages": [
                 {
                     "role": "system",
-                    "content": """You are a creative quantitative researcher finding MATHEMATICAL TECHNIQUES from ANY domain that could be adapted for trading.
+                    "content": """You extract MATHEMATICAL TECHNIQUES from research papers that could be adapted for trading.
 
-    GOAL: Find mathematical frameworks, algorithms, or techniques that could work on financial time series data.
+                    YOUR JOB:
+                    1. Find the CORE MATHEMATICAL EQUATION or ALGORITHM
+                    2. Identify what makes it UNUSUAL/NOVEL
+                    3. Translate the math into tradable parameters
 
-    LOOK FOR:
-    - Signal processing methods (filters, transforms, decomposition)
-    - Statistical inference techniques (Bayesian methods, hypothesis testing)
-    - Optimization algorithms (gradient methods, evolutionary algorithms)  
-    - Machine learning architectures (neural networks, attention mechanisms)
-    - Time series analysis (forecasting, anomaly detection, regime change)
-    - Graph/network analysis (correlation networks, community detection)
-    - Control theory (adaptive systems, feedback control)
-    - Physics-inspired methods (thermodynamics, particle systems)
+                    LOOK FOR:
+                    - Differential equations (SDEs, PDEs, ODEs)
+                    - Transform methods (Fourier, Wavelet, Laplace)
+                    - Filter designs (Kalman, Particle, Wiener)
+                    - Statistical tests (cointegration, stationarity, regime detection)
+                    - Optimization algorithms (gradient methods, genetic algorithms)
+                    - Network/graph algorithms (clustering, centrality measures)
 
-    CRITICAL REQUIREMENTS:
-    - Window/lookback parameters MUST be integers (whole numbers like 20, 30, 50)
-    - Never use decimals for windows (no 0.28, 1.5, etc.)
-    - Thresholds can be floats (like 2.5, 1.8)
-    - All parameters must be numeric values, not strings
+                    EXAMPLES:
 
-    RESPONSE FORMAT:
-    {
-        "tradable": true/false,
-        "reason": "How this math could apply to trading",
-        "strategy_type": "signal_processing/statistical_inference/optimization/etc",
-        "transferable_concept": "The core mathematical technique",
-        "paper_specific_parameters": {
-            "lookback_period": 20,    // ✅ MUST be integer
-            "window": 30,             // ✅ MUST be integer  
-            "threshold": 2.5,         // ✅ Can be float
-            "other_param": 100        // ✅ Numeric value
-        },
-        "market_application": "How to apply to price data",
-        "confidence": 0.0-1.0
-    }
+                    Paper: "We use Ornstein-Uhlenbeck process: dX_t = θ(μ - X_t)dt + σdW_t with θ=0.15"
+                    → {
+                        "tradable": true,
+                        "mathematical_technique": "Ornstein-Uhlenbeck mean reversion",
+                        "equation": "dX_t = θ(μ - X_t)dt + σdW_t",
+                        "paper_specific_parameters": {
+                            "mean_reversion_speed": 0.15,
+                            "lookback_period": 20
+                        },
+                        "uniqueness": "Fast mean reversion speed"
+                    }
 
-    EXAMPLES:
-    ❌ WRONG: {"lookback_period": 0.28}  // Decimal window
-    ✅ CORRECT: {"lookback_period": 1}   // Integer window
+                    Paper: "Kalman filter with measurement noise R=0.01, process noise Q=0.001"
+                    → {
+                        "tradable": true,
+                        "mathematical_technique": "Kalman filtering",
+                        "equation": "x_k = Ax_{k-1} + w_k, y_k = Hx_k + v_k",
+                        "paper_specific_parameters": {
+                            "measurement_noise": 0.01,
+                            "process_noise": 0.001,
+                            "state_dimension": 2
+                        },
+                        "uniqueness": "Low noise ratio for high-frequency data"
+                    }
 
-    ❌ WRONG: {"window": "adaptive"}      // String parameter  
-    ✅ CORRECT: {"window": 20}           // Numeric parameter
+                    Paper: "FFT with 256-point window, extract frequencies 0.1-0.5 Hz"
+                    → {
+                        "tradable": true,
+                        "mathematical_technique": "Fourier spectral analysis",
+                        "equation": "X(f) = ∫x(t)e^{-2πift}dt",
+                        "paper_specific_parameters": {
+                            "fft_window": 256,
+                            "freq_min": 0.1,
+                            "freq_max": 0.5
+                        },
+                        "uniqueness": "Specific frequency band isolation"
+                    }
 
-    BE CREATIVE: Even if the paper isn't about finance, the math might be applicable."""
-                },
-                {
-                    "role": "user", 
-                    "content": f"Find transferable mathematical techniques in this paper:\n\n{content}"
-                }
-            ],
-            "temperature": 0.4,
-            "max_tokens": 1500
-        }
+                    Paper: "We propose a novel architecture with attention mechanisms"
+                    → {
+                        "tradable": false,
+                        "reason": "No concrete mathematical formulation or parameters"
+                    }
+
+                    RETURN FORMAT:
+                    {
+                        "tradable": true/false,
+                        "mathematical_technique": "Name of the core math",
+                        "equation": "The actual equation/algorithm",
+                        "paper_specific_parameters": {
+                            "param1": NUMBER,
+                            "param2": NUMBER
+                        },
+                        "uniqueness": "What makes this technique different",
+                        "confidence": 0.0-1.0
+                    }
+
+                    If paper has NO explicit equations/algorithms → tradable: false
+                    If paper just describes concepts → tradable: false
+                    ONLY extract when you find CONCRETE MATH"""
         
         try:
             self.logger.info(f"🔧 Making API call with content length: {len(content)}")
@@ -547,7 +571,152 @@ def ai_strategy(prices):
         
         return signals
     '''
+    def _generate_ai_based_code(self, strategy: Dict) -> str:
+    """Generate code from extracted mathematical technique"""
+    technique = strategy.get('mathematical_technique', '').lower()
+    equation = strategy.get('equation', '')
+    params = strategy.get('parameters', {})
     
+    # Route to technique-specific generators
+    if 'kalman' in technique:
+        return self._generate_kalman_code(params, equation)
+    elif 'fourier' in technique or 'fft' in technique:
+        return self._generate_fft_code(params, equation)
+    elif 'ornstein' in technique or 'mean reversion' in technique:
+        return self._generate_ou_code(params, equation)
+    elif 'wavelet' in technique:
+        return self._generate_wavelet_code(params, equation)
+    else:
+        return self._generate_generic_equation_code(strategy)
+
+def _generate_kalman_code(self, params: Dict, equation: str) -> str:
+    """Generate Kalman filter implementation"""
+    measurement_noise = params.get('measurement_noise', 0.01)
+    process_noise = params.get('process_noise', 0.001)
+    
+    return f'''
+def strategy(prices):
+    """
+    Kalman Filter Strategy
+    Equation: {equation}
+    """
+    import numpy as np
+    import pandas as pd
+    
+    signals = []
+    
+    # Kalman filter initialization
+    x = prices.iloc[0]  # Initial state
+    P = 1.0  # Initial covariance
+    R = {measurement_noise}  # Measurement noise
+    Q = {process_noise}  # Process noise
+    
+    for price in prices:
+        # Prediction
+        x_pred = x
+        P_pred = P + Q
+        
+        # Update
+        K = P_pred / (P_pred + R)  # Kalman gain
+        x = x_pred + K * (price - x_pred)
+        P = (1 - K) * P_pred
+        
+        # Trading signal
+        innovation = price - x
+        if innovation > 2 * np.sqrt(P):
+            signals.append(-1)  # Price too high
+        elif innovation < -2 * np.sqrt(P):
+            signals.append(1)   # Price too low
+        else:
+            signals.append(0)
+    
+    return signals
+'''
+
+    def _generate_fft_code(self, params: Dict, equation: str) -> str:
+        """Generate FFT-based strategy"""
+        window = params.get('fft_window', 256)
+        freq_min = params.get('freq_min', 0.1)
+        freq_max = params.get('freq_max', 0.5)
+        
+        return f'''
+    def strategy(prices):
+        """
+        FFT Spectral Analysis
+        Equation: {equation}
+        """
+        import numpy as np
+        from scipy import fft
+        
+        signals = []
+        window_size = {window}
+        
+        for i in range(len(prices)):
+            if i < window_size:
+                signals.append(0)
+                continue
+            
+            # Extract window
+            price_window = prices.iloc[i-window_size:i].values
+            
+            # Compute FFT
+            fft_vals = fft.fft(price_window)
+            freqs = fft.fftfreq(len(price_window))
+            
+            # Filter frequency band
+            mask = (freqs >= {freq_min}) & (freqs <= {freq_max})
+            power = np.abs(fft_vals[mask])
+            
+            # Signal based on dominant frequency power
+            if len(power) > 0 and np.max(power) > np.mean(power) * 2:
+                signals.append(1)
+            else:
+                signals.append(0)
+        
+        return signals
+    '''
+
+    def _generate_ou_code(self, params: Dict, equation: str) -> str:
+        """Generate Ornstein-Uhlenbeck mean reversion strategy"""
+        theta = params.get('mean_reversion_speed', 0.15)
+        lookback = params.get('lookback_period', 20)
+        
+        return f'''
+    def strategy(prices):
+        """
+        Ornstein-Uhlenbeck Mean Reversion
+        Equation: {equation}
+        """
+        import numpy as np
+        
+        signals = []
+        theta = {theta}
+        
+        for i in range(len(prices)):
+            if i < {lookback}:
+                signals.append(0)
+                continue
+            
+            # Estimate mean from recent prices
+            mu = prices.iloc[i-{lookback}:i].mean()
+            
+            # Current deviation from mean
+            deviation = prices.iloc[i] - mu
+            
+            # Expected mean reversion: E[dX] = -theta * deviation * dt
+            expected_change = -theta * deviation
+            
+            # Trading signal
+            if expected_change > 0.5:
+                signals.append(1)   # Expect upward reversion
+            elif expected_change < -0.5:
+                signals.append(-1)  # Expect downward reversion
+            else:
+                signals.append(0)
+        
+        return signals
+    '''
+
     def _generate_fallback_code(self, strategy: Dict) -> str:
         """Generate fallback code if AI code generation fails"""
         params = strategy.get('parameters', {})

@@ -492,6 +492,51 @@ def strategy(prices):
     
     return signals
 '''
+    def calculate_weirdness_score(self, strategy: Dict) -> float:
+        """Score how unusual/unique a strategy is"""
+        score = 0.0
+        
+        # Check for unusual mathematical techniques
+        weird_techniques = [
+            'kalman', 'wavelet', 'fourier', 'ornstein', 'uhlenbeck',
+            'particle filter', 'markov', 'gibbs', 'spectral',
+            'topological', 'manifold', 'entropy', 'information geometry'
+        ]
+        
+        technique = strategy.get('mathematical_technique', '').lower()
+        if any(w in technique for w in weird_techniques):
+            score += 0.4
+        
+        # Check for unusual parameters
+        params = strategy.get('parameters', {})
+        param_values = list(params.values())
+        
+        # Unusual if parameters are very specific (not round numbers)
+        for val in param_values:
+            if isinstance(val, float) and val % 1 != 0:
+                score += 0.1  # Has decimals
+        
+        # Bonus for having equations
+        if strategy.get('equation'):
+            score += 0.3
+        
+        # Penalty for generic parameters
+        generic_sigs = [(50, 20, 1.8), (30, 60, 2.0), (20, 100, 2.5)]
+        param_sig = (
+            params.get('lookback_period', 0),
+            params.get('window', 0),
+            params.get('threshold', 0)
+        )
+        if param_sig in generic_sigs:
+            score -= 0.5
+        
+        return max(0, min(1, score))
+
+    # Then log it:
+    strategies_from_swarm = self._convert_swarm_to_strategies(final_results)
+    for s in strategies_from_swarm:
+        s['weirdness'] = self.calculate_weirdness_score(s)
+        self.logger.info(f"Weirdness: {s['weirdness']:.2f} | {s['name']}")
     
     # In your main pipeline - replace the task generation
     async def run_pipeline(self):
