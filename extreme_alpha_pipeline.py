@@ -8,7 +8,7 @@ import random
 from datetime import datetime
 from main import ResearchPipeline
 from database.csv_logger import CSVLogger
-from tools.discord_alerter import DiscordAlerter
+from tools.discord import DiscordAlerter
 from config.settings import DISCORD_WEBHOOK_URL
 
 class ExtremeAlphaPipeline:

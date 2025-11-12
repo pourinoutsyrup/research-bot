@@ -6,7 +6,7 @@ import traceback
 from datetime import datetime
 import settings
 from main import ResearchPipeline
-from tools.discord_alerter import DiscordAlerter
+from tools.discord import DiscordAlerter
 
 class PipelineScheduler:
     def __init__(self):

@@ -160,6 +160,13 @@ class BacktestEngine:
             self.logger.error(f"❌ Data fetch failed for {symbol} {timeframe}: {e}")
             return []
 
+    def observe_behavior(self, numeric_code: str, asset: str, timeframe: str):
+        data = self.get_historical_data(asset, timeframe)
+        local = {}
+        exec(numeric_code, {"data": data}, local)
+        result = local.get('numeric_model', lambda d: d)(data)
+        return result
+
     def run_comprehensive_backtest(self, strategy_input) -> Dict:
         """Run comprehensive backtest across multiple timeframes"""
         try:
