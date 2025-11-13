@@ -1,42 +1,41 @@
-from .base import BaseResearchAgent, ResearchTask
+import logging
+import pandas as pd
 from typing import Dict, Any
+from datetime import datetime
+from .base import BaseResearchAgent, ResearchTask
 
-class Evaluator(BaseResearchAgent):
-    """Evaluates strategy performance and quality"""
+class EvaluatorAgent(BaseResearchAgent):
+    """ORIGINAL evaluator + x402 paid backtesting"""
     
-    async def execute(self, task: ResearchTask) -> Dict[str, Any]:
-        self.logger.info(f"📊 Evaluating: {task.query}")
+    def __init__(self, deepseek_client, input_queue: asyncio.Queue, output_queue: asyncio.Queue = None, treasury=None):
+        super().__init__("evaluator", deepseek_client, input_queue, output_queue, treasury)
+    
+    async def execute(self, task_data: Dict) -> Dict[str, Any]:
+        """ORIGINAL evaluation + x402 paid backtesting"""
+        strategy_data = task_data
         
-        try:
-            prompt = f"""
-            Evaluate this trading strategy: {task.query}
-            
-            Assess:
-            - Mathematical soundness
-            - Market applicability
-            - Risk-adjusted returns potential
-            - Implementation feasibility
-            - Robustness across market conditions
-            
-            Return as JSON with:
-            - mathematical_soundness: score (0-1)
-            - market_applicability: score (0-1)
-            - risk_adjusted_potential: score (0-1)
-            - implementation_feasibility: score (0-1)
-            - overall_confidence: overall score (0-1)
-            - recommendations: improvement suggestions
-            """
-            
-            analysis = await self.deepseek_call(prompt)
-            
-            return {
-                'agent': self.name,
-                'task': task.query,
-                'evaluation': analysis,
-                'evaluation_quality': 'comprehensive',
-                'success': True
-            }
-            
-        except Exception as e:
-            self.logger.error(f"Evaluation failed: {e}")
-            return {'agent': self.name, 'task': task.query, 'error': str(e), 'success': False}
+        # USE x402 paid backtesting with premium data
+        if self.treasury:
+            evaluation_results = await self._x402_backtest_strategy(strategy_data)
+        else:
+            evaluation_results = await self._free_backtest_strategy(strategy_data)
+        
+        return {
+            'type': 'evaluated_strategy',
+            'original_built_strategy': strategy_data,
+            'evaluation_results': evaluation_results,
+            'evaluated_at': datetime.now().isoformat(),
+            'status': 'completed',
+            'agent': self.name
+        }
+    
+    async def _x402_backtest_strategy(self, strategy_data: Dict) -> Dict:
+        """PAY for premium backtesting"""
+        service_url = "https://api.paid-backtest.com/run"
+        cost = Decimal('3.00')
+        
+        success = await self.treasury.pay_for_service(service_url, cost)
+        if success:
+            return await self._access_paid_service(service_url, {'strategy': strategy_data})
+        
+        return await self._free_backtest_strategy(strategy_data)

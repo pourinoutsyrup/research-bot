@@ -1,51 +1,39 @@
 import asyncio
 import logging
 import os
-from config import settings
-
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+from decimal import Decimal
+from coordinator.x402_coordinator import X402Coordinator
 
 async def main():
-    logger.info("🚀 Starting Athena Research Pipeline...")
+    """Main entry point for Athena-X with x402 integration"""
+    
+    # Setup logging
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    )
+    logger = logging.getLogger("athena_x")
     
     try:
-        # Use your actual DeepSeek class
-        from workflows.ai_strategy_extractor import DeepSeekExtractor
-        deepseek = DeepSeekExtractor(api_key=os.getenv('DEEPSEEK_API_KEY'))
-        logger.info("✅ DeepSeek Extractor loaded")
-    except ImportError as e:
-        logger.error(f"❌ Failed to import DeepSeekExtractor: {e}")
-        return
+        logger.info("🚀 Starting Athena-X: Autonomous Quant Research Swarm with x402")
+        
+        # Initialize x402 coordinator with treasury wallet
+        wallet_address = os.getenv('X402_WALLET_ADDRESS', '0xYourTreasuryWalletAddress')
+        coordinator = X402Coordinator(wallet_address)
+        
+        # Initialize autonomous swarm
+        coordinator.initialize_autonomous_swarm()
+        
+        logger.info("✅ Athena-X initialized with x402 treasury")
+        logger.info(f"💰 Daily budget: {coordinator.treasury.daily_limit}")
+        logger.info(f"👥 Active agents: {len(coordinator.agents)}")
+        
+        # Start autonomous research cycle
+        await coordinator.run_autonomous_research_cycle()
+        
     except Exception as e:
-        logger.error(f"❌ DeepSeek initialization failed: {e}")
-        return
-    
-    try:
-        from coordinator import AthenaCoordinator
-        # Use SWARM_CONFIG from settings
-        coordinator = AthenaCoordinator(deepseek, settings.SWARM_CONFIG)
-        logger.info("✅ Athena Coordinator initialized")
-    except Exception as e:
-        logger.error(f"❌ Coordinator initialization failed: {e}")
-        return
-    
-    # Use your ACTIVE_QUERIES from settings
-    test_queries = settings.ACTIVE_QUERIES[:3]  # Test with first 3 queries
-    
-    logger.info(f"🧪 Running research cycle with {len(test_queries)} queries...")
-    results = await coordinator.run_research_cycle(test_queries)
-    
-    logger.info(f"✅ Research complete. Found {len(results)} validated concepts")
-    
-    for i, result in enumerate(results):
-        logger.info(f"📊 Result {i+1}: {result.concept}")
-        logger.info(f"   Confidence: {result.confidence_score:.2f}")
-        logger.info(f"   Source: {result.source}")
+        logger.error(f"Athena-X failed: {e}")
+        raise
 
 if __name__ == "__main__":
     asyncio.run(main())

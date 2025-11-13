@@ -1,20 +1,49 @@
-# Export all agents for easy importing
+"""
+Perpetual Queue-Based Research Agents
+"""
+
 from .base import BaseResearchAgent, ResearchTask
+from .query_generator import QueryGeneratorAgent
+from .scout import ResearchAgent
+from .interpreter import InterpreterAgent
+from .quality import QualityAgent
+from .research_amplifier import ResearchAmplifierAgent
+from .builder import BuilderAgent
+from .evaluator import EvaluatorAgent
 
-# Import your actual agents
-from .universal_scout import UniversalScout
-from .interpreter import Interpreter
-from .builder import Builder
-from .evaluator import Evaluator
-from .quality import Quality
-from .analyst import Analyst
+__all__ = [
+    # Base classes
+    'BaseResearchAgent',
+    'ResearchTask',
+    
+    # Agent implementations
+    'QueryGeneratorAgent',
+    'ResearchAgent', 
+    'InterpreterAgent',
+    'QualityAgent',
+    'ResearchAmplifierAgent',
+    'BuilderAgent',
+    'EvaluatorAgent',
+]
 
-# Agent registry - using your actual agent names
-AGENT_REGISTRY = {
-    'universal_scout': UniversalScout,
-    'interpreter': Interpreter, 
-    'builder': Builder,
-    'evaluator': Evaluator,
-    'quality': Quality,
-    'analyst': Analyst,
+# Agent descriptions for reference
+AGENT_DESCRIPTIONS = {
+    'QueryGeneratorAgent': 'Continuously generates pure mathematical research queries',
+    'ResearchAgent': 'Researches mathematical concepts - only runs when queue has items',
+    'InterpreterAgent': 'Interprets research discoveries into structured concepts',
+    'QualityAgent': 'Quality checks concepts for trading potential',
+    'ResearchAmplifierAgent': 'Amplifies research with crypto perpetual futures applications', 
+    'BuilderAgent': 'Builds complete crypto trading strategies from research',
+    'EvaluatorAgent': 'Evaluates strategies with crypto data and backtesting',
 }
+
+# Pipeline order
+PIPELINE_ORDER = [
+    'QueryGeneratorAgent',
+    'ResearchAgent', 
+    'InterpreterAgent',
+    'QualityAgent',
+    'ResearchAmplifierAgent',
+    'BuilderAgent',
+    'EvaluatorAgent',
+]

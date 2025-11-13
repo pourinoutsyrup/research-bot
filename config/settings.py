@@ -11,22 +11,24 @@ GITHUB_TOKEN = os.getenv('GITHUB_TOKEN')
 # ==================== ATHENA SWARM CONFIGURATION ====================
 
 SWARM_CONFIG = {
-    'max_concurrent_agents': 6,
+    'max_concurrent_agents': 12,
     'max_workers_per_agent': 2,
-    'task_timeout_seconds': 60,
+    'task_timeout_seconds': 120,
     'retry_attempts': 2,
-    'rate_limit_delay': 1.0,
+    'rate_limit_delay': 0.8,
     
     # Pipeline control
-    'max_queries_per_cycle': 5,
+    'max_queries_per_cycle': 8,
     'min_confidence_threshold': 0.6,
     'max_bullshit_score': 0.3,
     'quality_threshold': 0.5,
     
     # Resource management
     'max_concepts_per_agent': 10,
-    'max_strategies_per_run': 25,
-    'research_cycle_interval': 3600,  # 1 hour
+    'max_strategies_per_run': 40,
+    'research_cycle_interval': 1800,  # 1 hour
+
+    
 }
 
 # ==================== AGENT SPECIFIC CONFIGURATION ====================
@@ -34,9 +36,9 @@ SWARM_CONFIG = {
 AGENT_CONFIG = {
     'universal_scout': {
         'enabled': True,
-        'workers': 2,
-        'rate_limit': 1.0,
-        'max_concepts': 15,
+        'workers': 3,
+        'rate_limit': 1.5,
+        'max_concepts': 20,
         'discovery_depth': 2
     },
     'interpreter': {
@@ -47,9 +49,9 @@ AGENT_CONFIG = {
     },
     'builder': {
         'enabled': True,
-        'workers': 2,
+        'workers': 3,
         'rate_limit': 1.0,
-        'max_strategies': 10
+        'max_strategies': 15
     },
     'evaluator': {
         'enabled': True,
@@ -59,7 +61,7 @@ AGENT_CONFIG = {
     },
     'quality': {
         'enabled': True,
-        'workers': 2,
+        'workers': 3,
         'rate_limit': 1.0,
         'min_quality_score': 0.6
     },

@@ -1,65 +1,99 @@
-"""
-workflows/ai_strategy_extractor.py
-ATHENA v3.0 — Real DeepSeek API + JSON Extraction
-"""
-import logging
+import aiohttp
 import json
-import httpx
+import logging
+import os
+from typing import Dict, Any, Optional
 
-logger = logging.getLogger(__name__)
+load_dotenv()
 
-class DeepSeekExtractor:
-    def __init__(self, api_key: str):
-        self.api_key = api_key
-        self.base_url = "https://api.deepseek.com/v1/chat/completions"
-
-    async def extract_tradable_strategy(self, prompt: str):
+class DeepSeekClient:
+    """Real DeepSeek API client"""
+    
+    def __init__(self, api_key: str = None, base_url: str = "https://api.deepseek.com/v1"):
+        self.api_key = api_key or os.getenv('DEEPSEEK_API_KEY')
+        if not self.api_key:
+            raise ValueError("DeepSeek API key not found. Set DEEPSEEK_API_KEY environment variable.")
+        
+        self.base_url = base_url
+        self.logger = logging.getLogger("deepseek")
+        self.session = None
+    
+    async def __aenter__(self):
+        self.session = aiohttp.ClientSession()
+        return self
+    
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        if self.session:
+            await self.session.close()
+    
+    async def extract_tradable_strategy(self, prompt: str) -> Dict[str, Any]:
+        """Make real DeepSeek API call"""
+        try:
+            return await self._make_api_call(prompt)
+        except Exception as e:
+            self.logger.error(f"DeepSeek API call failed: {e}")
+            return {"error": str(e)}
+    
+    async def _make_api_call(self, prompt: str) -> Dict[str, Any]:
+        """Make actual API call to DeepSeek"""
+        if not self.session:
+            self.session = aiohttp.ClientSession()
+        
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json"
         }
+        
         payload = {
             "model": "deepseek-chat",
-            "messages": [{"role": "user", "content": prompt}],
+            "messages": [
+                {
+                    "role": "user", 
+                    "content": prompt
+                }
+            ],
             "temperature": 0.7,
-            "max_tokens": 2048
+            "max_tokens": 4000,
+            "stream": False
         }
-
-        logger.info(f"Making API call with content length: {len(prompt)}")
-        try:
-            async with httpx.AsyncClient(timeout=60.0) as client:
-                response = await client.post(self.base_url, json=payload, headers=headers)
-            
-            logger.info(f"API Response Status: {response.status_code}")
-
-            if response.status_code != 200:
-                logger.error(f"DeepSeek API error: {response.text}")
-                return {"strategy_code": "[]"}
-
-            data = response.json()
-            content = data["choices"][0]["message"]["content"]
-
-            # Extract JSON from ```json ... ```
-            if "```json" in content:
-                start = content.find("```json") + 7
-                end = content.find("```", start)
-                json_str = content[start:end].strip()
-            elif "```" in content:
-                start = content.find("```") + 3
-                end = content.find("```", start)
-                json_str = content[start:end].strip()
+        
+        async with self.session.post(
+            f"{self.base_url}/chat/completions",
+            headers=headers,
+            json=payload,
+            timeout=aiohttp.ClientTimeout(total=60)
+        ) as response:
+            if response.status == 200:
+                data = await response.json()
+                return self._parse_response(data)
             else:
-                json_str = content.strip()
-
-            try:
-                parsed = json.loads(json_str)
-                result = json.dumps(parsed)
-            except:
-                # Fallback: return raw text
-                result = json_str
-
-            return {"strategy_code": result}
-
+                error_text = await response.text()
+                self.logger.error(f"API call failed: {response.status} - {error_text}")
+                raise Exception(f"API call failed: {response.status} - {error_text}")
+    
+    def _parse_response(self, response: Dict[str, Any]) -> Dict[str, Any]:
+        """Parse DeepSeek API response"""
+        try:
+            if 'choices' in response and len(response['choices']) > 0:
+                content = response['choices'][0]['message']['content']
+                
+                # Try to parse as JSON first
+                try:
+                    return json.loads(content)
+                except json.JSONDecodeError:
+                    # If not JSON, return as text with some structure
+                    return {
+                        "content": content,
+                        "raw_response": content
+                    }
+            else:
+                return {"error": "No choices in response", "raw_response": response}
+                
         except Exception as e:
-            logger.error(f"DeepSeek extraction failed: {e}")
-            return {"strategy_code": "[]"}
+            self.logger.error(f"Failed to parse DeepSeek response: {e}")
+            return {"error": f"Parse error: {str(e)}", "raw_response": response}
+    
+    async def close(self):
+        """Close the session"""
+        if self.session:
+            await self.session.close()
